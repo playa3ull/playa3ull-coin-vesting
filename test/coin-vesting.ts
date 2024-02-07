@@ -26,7 +26,7 @@ describe.only("Coin Vesting", async () => {
 
         await network.provider.send("hardhat_setBalance", [
             owner.address,
-            "0x56BC75E2D63100000",
+            "0x6124FEE993BC0000",
         ]);
     });
 
@@ -777,6 +777,133 @@ describe.only("Coin Vesting", async () => {
 
         expect(await beneficiary.getBalance()).to.be.equal(
             preBalance.add(ethers.utils.parseUnits("100", "ether"))
+        );
+    });
+
+    it("Should simulate daily release over a month", async function () {
+        await network.provider.send("hardhat_setBalance", [
+            contracts.coinVesting.address,
+            "0x39E7139A8C08FA06000000",
+        ]);
+
+        await network.provider.send("hardhat_setBalance", [
+            beneficiary.address,
+            "0x0",
+        ]);
+
+        const startTime = Date.now() + 60 * 60 * 24 * 7 * 4; // 1 month from now
+        const cliff = 0;
+        const duration = 60 * 60 * 24 * 28; // 28 days in seconds
+        const slices = 60 * 60 * 24; // 1 day
+        const amount = ethers.utils.parseUnits("70000000", "ether");
+
+        const expectedReleasePerSlice = amount.div(duration / slices);
+
+        await contracts.coinVesting
+            .connect(owner)
+            .createVestingSchedule(
+                beneficiary.address,
+                startTime,
+                cliff,
+                duration,
+                slices,
+                false,
+                amount
+            );
+
+        await expect(
+            contracts.coinVesting
+                .connect(owner)
+                .withdraw(expectedReleasePerSlice)
+        ).to.be.revertedWith("CoinVesting: not enough withdrawable funds");
+
+        expect(
+            await contracts.coinVesting.computeReleasableAmount(
+                keccak256(
+                    ethers.utils.solidityPack(
+                        ["address", "uint256"],
+                        [beneficiary.address, 0]
+                    )
+                )
+            )
+        ).to.be.equal(0);
+
+        await time.increaseTo(startTime);
+        expect(
+            await contracts.coinVesting.computeReleasableAmount(
+                keccak256(
+                    ethers.utils.solidityPack(
+                        ["address", "uint256"],
+                        [beneficiary.address, 0]
+                    )
+                )
+            )
+        ).to.be.equal(0);
+
+        await time.increaseTo(startTime + slices);
+        expect(
+            await contracts.coinVesting.computeReleasableAmount(
+                keccak256(
+                    ethers.utils.solidityPack(
+                        ["address", "uint256"],
+                        [beneficiary.address, 0]
+                    )
+                )
+            )
+        ).to.equal(expectedReleasePerSlice);
+
+        await time.increaseTo(startTime + slices * 2);
+        expect(
+            await contracts.coinVesting.computeReleasableAmount(
+                keccak256(
+                    ethers.utils.solidityPack(
+                        ["address", "uint256"],
+                        [beneficiary.address, 0]
+                    )
+                )
+            )
+        ).to.equal(expectedReleasePerSlice.mul(2));
+
+        await time.increaseTo(startTime + slices * 3);
+        expect(
+            await contracts.coinVesting.computeReleasableAmount(
+                keccak256(
+                    ethers.utils.solidityPack(
+                        ["address", "uint256"],
+                        [beneficiary.address, 0]
+                    )
+                )
+            )
+        ).to.equal(expectedReleasePerSlice.mul(3));
+
+        await time.increaseTo(startTime + slices * 28);
+        expect(
+            await contracts.coinVesting.computeReleasableAmount(
+                keccak256(
+                    ethers.utils.solidityPack(
+                        ["address", "uint256"],
+                        [beneficiary.address, 0]
+                    )
+                )
+            )
+        ).to.equal(amount);
+
+        const preBalance = await beneficiary.getBalance();
+
+        await contracts.coinVesting
+            .connect(owner)
+            .release(
+                keccak256(
+                    ethers.utils.solidityPack(
+                        ["address", "uint256"],
+                        [beneficiary.address, 0]
+                    )
+                ),
+                amount
+            );
+
+        expect(await beneficiary.getBalance()).to.be.equal(
+            preBalance.add(amount)
         );
     });
 });

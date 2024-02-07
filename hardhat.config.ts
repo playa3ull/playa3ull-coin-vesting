@@ -8,13 +8,41 @@ import "solidity-coverage";
 
 dotenvConfig();
 
-if (!process.env.MAINNET_DEPLOYER_PRIVATE_KEY) {
-    throw new Error("MAINNET_DEPLOYER_PRIVATE_KEY is not set");
-}
+const getTestnetConfig = () => {
+    if (!process.env.TESTNET_DEPLOYER_PRIVATE_KEY) {
+        throw new Error("TESTNET_DEPLOYER_PRIVATE_KEY is not set");
+    }
 
-if (!process.env.TESTNET_DEPLOYER_PRIVATE_KEY) {
-    throw new Error("TESTNET_DEPLOYER_PRIVATE_KEY is not set");
-}
+    const config = {
+        live: true,
+        saveDeployments: true,
+        tags: ["subnet"],
+        url:
+            process.env.TESTNET_RPC_URL ||
+            "https://api.testnet.playa3ull.games",
+        accounts: [process.env.TESTNET_DEPLOYER_PRIVATE_KEY],
+    };
+
+    return config;
+};
+
+const getMainnetConfig = () => {
+    if (!process.env.MAINNET_DEPLOYER_PRIVATE_KEY) {
+        throw new Error("MAINNET_DEPLOYER_PRIVATE_KEY is not set");
+    }
+
+    const config = {
+        live: true,
+        saveDeployments: true,
+        tags: ["subnet"],
+        url:
+            process.env.MAINNET_RPC_URL ||
+            "https://api.mainnet.playa3ull.games",
+        accounts: [process.env.MAINNET_DEPLOYER_PRIVATE_KEY],
+    };
+
+    return config;
+};
 
 const config: HardhatUserConfig = {
     gasReporter: {
@@ -53,31 +81,8 @@ const config: HardhatUserConfig = {
             },
             tags: ["local", "test"],
         },
-        localsubnet: {
-            live: false,
-            saveDeployments: true,
-            tags: ["subnet"],
-            url: "http://127.0.0.1:9654/ext/bc/2GsbK9pBB7MGxyDP2Wv1ScLZBaDHatcYx54YAFeGhZwcsAbQmE/rpc",
-            accounts: [process.env.TESTNET_DEPLOYER_PRIVATE_KEY],
-        },
-        testnet: {
-            live: true,
-            saveDeployments: true,
-            tags: ["subnet"],
-            url:
-                process.env.TESTNET_RPC_URL ||
-                "https://api.testnet.playa3ull.games",
-            accounts: [process.env.TESTNET_DEPLOYER_PRIVATE_KEY],
-        },
-        mainnet: {
-            live: true,
-            saveDeployments: true,
-            tags: ["subnet"],
-            url:
-                process.env.MAINNET_RPC_URL ||
-                "https://api.mainnet.playa3ull.games",
-            accounts: [process.env.MAINNET_DEPLOYER_PRIVATE_KEY],
-        },
+        testnet: getTestnetConfig(),
+        mainnet: getMainnetConfig(),
     },
     typechain: {
         target: "ethers-v5",
