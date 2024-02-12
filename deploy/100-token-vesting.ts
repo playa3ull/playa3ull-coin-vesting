@@ -3,10 +3,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { autoMine } from "../shared/config";
 
-/**
- *
- * @notice Deploys the Token and TokenVesting contracts for testing purposes
- */
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
     const { deploy } = deployments;
