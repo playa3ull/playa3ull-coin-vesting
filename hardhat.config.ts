@@ -17,6 +17,7 @@ const getTestnetConfig = () => {
         live: true,
         saveDeployments: true,
         tags: ["subnet"],
+
         url:
             process.env.TESTNET_RPC_URL ||
             "https://api.testnet.playa3ull.games",
@@ -52,11 +53,16 @@ const getAvalancheConfig = () => {
     const config = {
         live: true,
         saveDeployments: true,
+
         tags: ["avalanche"],
         url:
             process.env.AVALANCH_RPC_URL ||
             "https://api.avax.network/ext/bc/C/rpc",
         accounts: [process.env.MAINNET_DEPLOYER_PRIVATE_KEY],
+
+        etherscan: {
+            snowtrace: "snowtrace",
+        },
     };
 
     return config;
@@ -67,6 +73,10 @@ const config: HardhatUserConfig = {
         currency: "3ULL",
         enabled: true,
         gasPrice: 0.00005,
+    },
+
+    etherscan: {
+        apiKey: "snowtrace",
     },
     solidity: {
         compilers: [
@@ -101,7 +111,7 @@ const config: HardhatUserConfig = {
         },
         testnet: getTestnetConfig(),
         mainnet: getMainnetConfig(),
-        avalanch: getAvalancheConfig(),
+        avalanche: getAvalancheConfig(),
     },
     typechain: {
         target: "ethers-v5",
