@@ -44,6 +44,24 @@ const getMainnetConfig = () => {
     return config;
 };
 
+const getAvalancheConfig = () => {
+    if (!process.env.MAINNET_DEPLOYER_PRIVATE_KEY) {
+        throw new Error("MAINNET_DEPLOYER_PRIVATE_KEY is not set");
+    }
+
+    const config = {
+        live: true,
+        saveDeployments: true,
+        tags: ["avalanche"],
+        url:
+            process.env.AVALANCH_RPC_URL ||
+            "https://api.avax.network/ext/bc/C/rpc",
+        accounts: [process.env.MAINNET_DEPLOYER_PRIVATE_KEY],
+    };
+
+    return config;
+};
+
 const config: HardhatUserConfig = {
     gasReporter: {
         currency: "3ULL",
@@ -83,6 +101,7 @@ const config: HardhatUserConfig = {
         },
         testnet: getTestnetConfig(),
         mainnet: getMainnetConfig(),
+        avalanch: getAvalancheConfig(),
     },
     typechain: {
         target: "ethers-v5",
